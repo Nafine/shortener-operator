@@ -1,0 +1,9 @@
+apiVersion: shortener.nafine.dev/v1alpha1
+kind: UrlShortener
+metadata:
+  labels:
+    app.kubernetes.io/name: shortener-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: urlshortener-sample
+spec:
+  # TODO(user): Add fields here
