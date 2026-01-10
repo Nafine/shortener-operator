@@ -81,7 +81,7 @@ func (r *UrlShortenerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 
-		if err := r.Client.Get(ctx, req.NamespacedName, shortener); err != nil {
+		if err := r.Get(ctx, req.NamespacedName, shortener); err != nil {
 			log.Error(err, "Failed to get UrlShortener resource.")
 			return ctrl.Result{}, err
 		}
