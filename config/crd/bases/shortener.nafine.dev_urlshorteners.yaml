@@ -39,17 +39,40 @@ spec:
           spec:
             description: spec defines the desired state of UrlShortener
             properties:
+              apiKeysSecretRef:
+                description: apiKeys defines privileged users
+                properties:
+                  key:
+                    description: The key of the secret to select from.  Must be a
+                      valid secret key.
+                    type: string
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    type: string
+                  optional:
+                    description: Specify whether the Secret or its key must be defined
+                    type: boolean
+                required:
+                - key
+                type: object
+                x-kubernetes-map-type: atomic
               appEnv:
                 description: appEnv defines current environment (local|prod)
                 type: string
               http:
                 description: http defines basic configuration of shortener service
                 properties:
-                  address:
-                    description: Address on which url-shortener container will listen
-                    type: string
                   idleTimeout:
                     type: string
+                  port:
+                    format: int32
+                    type: integer
                   timeout:
                     type: string
                 type: object
@@ -77,6 +100,7 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
             required:
+            - apiKeysSecretRef
             - storageDsnSecretRef
             type: object
           status:
