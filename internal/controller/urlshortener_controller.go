@@ -19,6 +19,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -26,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -202,12 +203,6 @@ func (r *UrlShortenerReconciler) deploymentForShortener(shortener *shortenerv1al
 								Name: "STORAGE_DSN",
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: shortener.Spec.StorageDsnSecretRef,
-								},
-							},
-							{
-								Name: "API_KEYS",
-								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: shortener.Spec.ApiKeysSecretRef,
 								},
 							},
 							{
