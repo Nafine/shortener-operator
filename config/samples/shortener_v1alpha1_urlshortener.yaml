@@ -10,7 +10,10 @@ spec:
   storageDsnSecretRef:
       name: storage-dsn
       key: dsn
+  apiKeysSecretRef:
+      name: keys-secret
+      key: apiKeys.yaml
   http:
-    address: "0.0.0.0:8080"
+    port: 8080
     timeout: 4s
     idleTimeout: 10s

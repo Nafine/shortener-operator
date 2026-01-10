@@ -190,7 +190,7 @@ func (r *UrlShortenerReconciler) deploymentForShortener(shortener *shortenerv1al
 							},
 						},
 						Ports: []corev1.ContainerPort{{
-							ContainerPort: 8080,
+							ContainerPort: *shortener.Spec.Port,
 							Name:          "shortener",
 						}},
 						Env: []corev1.EnvVar{
@@ -205,8 +205,18 @@ func (r *UrlShortenerReconciler) deploymentForShortener(shortener *shortenerv1al
 								},
 							},
 							{
-								Name:  "HTTP_ADDRESS",
-								Value: *shortener.Spec.Address,
+								Name: "API_KEYS",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: shortener.Spec.ApiKeysSecretRef,
+								},
+							},
+							{
+								Name:  "HTTP_HOST",
+								Value: "0.0.0.0",
+							},
+							{
+								Name:  "HTTP_PORT",
+								Value: fmt.Sprintf("%d", *shortener.Spec.Port),
 							},
 							{
 								Name:  "HTTP_TIMEOUT",
@@ -215,6 +225,20 @@ func (r *UrlShortenerReconciler) deploymentForShortener(shortener *shortenerv1al
 							{
 								Name:  "HTTP_IDLE_TIMEOUT",
 								Value: shortener.Spec.IdleTimeout.Duration.String(),
+							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      shortener.Name,
+								MountPath: "/etc/shortener",
+							},
+						},
+					}},
+					Volumes: []corev1.Volume{{
+						Name: shortener.Name,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: shortener.Spec.ApiKeysSecretRef.Name,
 							},
 						},
 					}},

@@ -24,9 +24,8 @@ import (
 // UrlShortenerSpec defines the desired state of UrlShortener
 
 type Http struct {
-	// Address on which url-shortener container will listen
 	// +optional
-	Address *string `json:"address" json-default:"0.0.0.0:8080"`
+	Port *int32 `json:"port" json-default:"8080"`
 	// +optional
 	Timeout metav1.Duration `json:"timeout" json-default:"10s"`
 	// +optional
@@ -39,7 +38,10 @@ type UrlShortenerSpec struct {
 	Http `json:"http"`
 	// storageDsn defines storage uri
 	// +required
-	StorageDsnSecretRef *v1.SecretKeySelector `json:"storageDsnSecretRef,required"`
+	StorageDsnSecretRef *v1.SecretKeySelector `json:"storageDsnSecretRef"`
+	// apiKeys defines privileged users
+	// +required
+	ApiKeysSecretRef *v1.SecretKeySelector `json:"apiKeysSecretRef"`
 	// appEnv defines current environment (local|prod)
 	// +optional
 	AppEnv *string `json:"appEnv" json-default:"local"`
