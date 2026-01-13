@@ -45,6 +45,8 @@ type UrlShortenerSpec struct {
 	// appEnv defines current environment (local|prod)
 	// +optional
 	AppEnv *string `json:"appEnv" json-default:"local"`
+	// +optional
+	Replicas *int32 `json:"replicas" json-default:"1"`
 }
 
 // UrlShortenerStatus defines the observed state of UrlShortener.
