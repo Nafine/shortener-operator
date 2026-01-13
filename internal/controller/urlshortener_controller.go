@@ -19,13 +19,13 @@ package controller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -120,18 +120,55 @@ func (r *UrlShortenerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		log.Info("Deployment reconciled", "Operation", op)
 	}
 
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      shortener.Name,
+			Namespace: shortener.Namespace,
+		},
+	}
+
+	op, err = oputils.CreateOrUpdate(ctx, r.Client, service, func() error {
+		service.Spec.Selector = map[string]string{"app.kubernetes.io/name": "project"}
+		service.Spec.Type = corev1.ServiceTypeClusterIP
+		service.Spec.Ports = []corev1.ServicePort{
+			{
+				Name:       "http",
+				Protocol:   corev1.ProtocolTCP,
+				Port:       *shortener.Spec.Port,
+				TargetPort: intstr.FromInt32(*shortener.Spec.Port),
+			},
+		}
+
+		return ctrl.SetControllerReference(shortener, service, r.Scheme)
+	})
+
+	if err != nil {
+		log.Error(err, "Failed to reconcile Service")
+		meta.SetStatusCondition(&shortener.Status.Conditions, metav1.Condition{
+			Type:    available,
+			Status:  metav1.ConditionFalse,
+			Reason:  "Reconciling",
+			Message: fmt.Sprintf("Failed to reconcile service: %v", err),
+		})
+		if err := r.Status().Update(ctx, shortener); err != nil {
+			log.Error(err, "Failed to update UrlShortener status")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
+	}
+
+	if op != oputils.OperationResultNone {
+		log.Info("Service reconciled", "Operation", op)
+	}
+
 	meta.SetStatusCondition(&shortener.Status.Conditions, metav1.Condition{
 		Type:    available,
 		Status:  metav1.ConditionTrue,
 		Reason:  "Reconciling",
-		Message: fmt.Sprintf("Deployment for custom resource (%s) is ready", shortener.Name),
+		Message: fmt.Sprintf("Сustom resource (%s) is ready", shortener.Name),
 	})
 
-	if err := r.Status().Update(ctx, shortener); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{RequeueAfter: time.Minute}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -139,6 +176,7 @@ func (r *UrlShortenerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&shortenerv1alpha1.UrlShortener{}).
 		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
 		Named("urlshortener").
 		Complete(r)
 }
