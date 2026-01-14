@@ -1,8 +1,9 @@
 # shortener-operator
-// TODO(user): Add simple overview of use/purpose
+The UrlShortener operator can be used for deploying and managing 
+[UrlShortener](https://github.com/Nafine/url-shortener) application into kubernetes.
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+The architecture of the Url Shortener Operator follows the basic controller pattern: the Operator container with the 
+controller is deployed into a Pod and listens for incoming resources with Kind: UrlShortener.
 
 ## Getting Started
 
@@ -12,110 +13,128 @@
 - kubectl version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+### Operator Installation
+
+Using install.yaml:
 
 ```sh
-make docker-build docker-push IMG=<some-registry>/shortener-operator:tag
+kubectl apply -f https://raw.githubusercontent.com/nafine/shortener-operator/main/dist/install.yaml
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
+Or you can use provided Helm Chart located in `dist/chart`.
 
-**Install the CRDs into the cluster:**
+### Configuration
 
-```sh
-make install
+```yaml
+apiVersion: shortener.nafine.dev/v1alpha1
+kind: UrlShortener
+metadata:
+  labels:
+    app.kubernetes.io/name: shortener-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: urlshortener-sample
+spec:
+  replicas: 3
+  appEnv: "local"
+  storageDsnSecretRef:
+      name: storage-dsn
+      key: dsn
+  apiKeysSecretRef:
+      name: keys-secret
+      key: apiKeys.yaml
+  http:
+    port: 8080
+    timeout: 4s
+    idleTimeout: 10s
 ```
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
+> [!NOTE]
+> spec.Port defines port on which ==container and service== will listen to.
 
-```sh
-make deploy IMG=<some-registry>/shortener-operator:tag
+#### Storage
+
+For application to work you need to deploy an instance of PostgreSQL database.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: shortener-db
+spec:
+  selector:
+    app: shortener-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shortener-db
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: shortener-db
+  template:
+    metadata:
+      labels:
+        app: shortener-db
+    spec:
+      nodeSelector:
+        app: shortener-db
+      containers:
+        - name: shortener-db
+          image: postgres:16.0
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "user"
+            - name: POSTGRES_PASSWORD
+              value: "password"
+            - name: POSTGRES_DB
+              value: "shortener_db"
 ```
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
+Next, you need a secret for your db to provide it to UrlShortener operator:
 
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
-```sh
-kubectl apply -k config/samples/
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: storage-dsn
+type: Opaque
+stringData:
+  dsn: "postgresql://user:password@shortener-db/shortener_db?sslmode=disable"
 ```
 
->**NOTE**: Ensure that the samples has default values to test it out.
+#### Network
 
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
+Operator provides Service of type ClusterIP.  
+You are free to choose your way providing public access to your instance of application. For example:
 
-```sh
-kubectl delete -k config/samples/
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shortener-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: urlshortener-sample
+                port:
+                  number: 8080
 ```
-
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
-make uninstall
-```
-
-**UnDeploy the controller from the cluster:**
-
-```sh
-make undeploy
-```
-
-## Project Distribution
-
-Following the options to release and provide this solution to the users.
-
-### By providing a bundle with all YAML files
-
-1. Build the installer for the image built and published in the registry:
-
-```sh
-make build-installer IMG=<some-registry>/shortener-operator:tag
-```
-
-**NOTE:** The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without its
-dependencies.
-
-2. Using the installer
-
-Users can just run 'kubectl apply -f <URL for YAML BUNDLE>' to install
-the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/shortener-operator/<tag or branch>/dist/install.yaml
-```
-
-### By providing a Helm Chart
-
-1. Build the chart using the optional helm plugin
-
-```sh
-kubebuilder edit --plugins=helm/v2-alpha
-```
-
-2. See that a chart was generated under 'dist/chart', and users
-can obtain this solution from there.
-
-**NOTE:** If you change the project, you need to update the Helm Chart
-using the same command above to sync the latest changes. Furthermore,
-if you create webhooks, you need to use the above command with
-the '--force' flag and manually ensure that any custom configuration
-previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
-is manually re-applied afterwards.
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
 ## License
 

@@ -1,0 +1,22 @@
+{{- if .Values.rbacHelpers.enable }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/name: shortener-operator
+    name: shortener-operator-urlshortener-admin-role
+rules:
+    - apiGroups:
+        - shortener.nafine.dev
+      resources:
+        - urlshorteners
+      verbs:
+        - '*'
+    - apiGroups:
+        - shortener.nafine.dev
+      resources:
+        - urlshorteners/status
+      verbs:
+        - get
+{{- end }}

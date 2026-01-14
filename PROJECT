@@ -6,6 +6,10 @@ cliVersion: 4.10.1
 domain: nafine.dev
 layout:
 - go.kubebuilder.io/v4
+plugins:
+  helm.kubebuilder.io/v2-alpha:
+    manifests: dist/install.yaml
+    output: dist
 projectName: shortener-operator
 repo: github.com/nafine/shortener-operator
 resources:
