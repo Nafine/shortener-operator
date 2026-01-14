@@ -516,7 +516,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: controller:latest
+        image: naf1ne/shortener-operator:v0.1.9
         livenessProbe:
           httpGet:
             path: /healthz
