@@ -128,7 +128,14 @@ func (r *UrlShortenerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	op, err = oputils.CreateOrUpdate(ctx, r.Client, service, func() error {
-		service.Spec.Selector = map[string]string{"app.kubernetes.io/name": "project"}
+		selector := map[string]string{
+			"app.kubernetes.io/name":       "url-shortener",
+			"app.kubernetes.io/instance":   shortener.Name,
+			"app.kubernetes.io/managed-by": "url-shortener-operator",
+		}
+
+		service.Spec.Selector = selector
+
 		service.Spec.Type = corev1.ServiceTypeClusterIP
 		service.Spec.Ports = []corev1.ServicePort{
 			{
@@ -182,15 +189,21 @@ func (r *UrlShortenerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *UrlShortenerReconciler) mutateDeployment(shortener *shortenerv1alpha1.UrlShortener, dep *appsv1.Deployment, replicas int32) error {
-	image := "naf1ne/url-shortener:latest"
+	image := "naf1ne/url-shortener:v0.2.2"
+
+	selector := map[string]string{
+		"app.kubernetes.io/name":       "url-shortener",
+		"app.kubernetes.io/instance":   shortener.Name,
+		"app.kubernetes.io/managed-by": "url-shortener-operator",
+	}
 
 	dep.Spec.Replicas = ptr.To(replicas)
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{"app.kubernetes.io/name": "project"},
+		MatchLabels: selector,
 	}
 	dep.Spec.Template = corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{"app.kubernetes.io/name": "project"},
+			Labels: selector,
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{

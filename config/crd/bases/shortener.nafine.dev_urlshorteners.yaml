@@ -76,6 +76,9 @@ spec:
                   timeout:
                     type: string
                 type: object
+              replicas:
+                format: int32
+                type: integer
               storageDsnSecretRef:
                 description: storageDsn defines storage uri
                 properties:
