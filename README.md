@@ -49,7 +49,7 @@ spec:
 ```
 
 > [!NOTE]
-> spec..http.port defines port on which ==container and service== will listen to.
+> spec.http.port defines port on which ==container and service== will listen to.
 
 #### Storage
 
