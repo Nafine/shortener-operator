@@ -49,7 +49,7 @@ spec:
 ```
 
 > [!NOTE]
-> spec.Port defines port on which ==container and service== will listen to.
+> spec..http.port defines port on which ==container and service== will listen to.
 
 #### Storage
 
@@ -83,8 +83,6 @@ spec:
       labels:
         app: shortener-db
     spec:
-      nodeSelector:
-        app: shortener-db
       containers:
         - name: shortener-db
           image: postgres:16.0
