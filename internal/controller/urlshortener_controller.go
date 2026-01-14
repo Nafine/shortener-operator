@@ -52,7 +52,7 @@ type UrlShortenerReconciler struct {
 // +kubebuilder:rbac:groups=shortener.nafine.dev,resources=urlshorteners/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
 func (r *UrlShortenerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
